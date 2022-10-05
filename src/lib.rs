@@ -63,6 +63,12 @@ impl<T: Display> Node<T> {
     }
 }
 
+impl<T: Display + Eq> PartialEq for Node<T> {
+    fn eq(&self, other: &Self) -> bool {
+        self.id == other.id
+    }
+}
+
 /// Structure to organize nodes with edges
 pub struct Graph<T: Display> {
     nodes: Vec<Rc<RefCell<Node<T>>>>,
@@ -84,15 +90,19 @@ impl<'a, T: Display + Clone + Eq> Graph<T> {
 
     /// Adds an edge between two nodes, single direction
     pub fn add_edge(&mut self, weight: i32, parent_index: usize, target_index: usize) {
-        let parent = Rc::new(RefCell::clone(&self.nodes.get(parent_index).unwrap()));
-        let target = Rc::new(RefCell::clone(&self.nodes.get(target_index).unwrap()));
-        self.nodes[parent_index].borrow_mut().add_edge(Edge::new(weight, parent, target));
+        let parent = Rc::clone(&self.nodes.get(parent_index).unwrap());
+        let target = Rc::clone(&self.nodes.get(target_index).unwrap());
+        //let parent = Rc::new(RefCell::clone(&self.nodes.get(parent_index).unwrap()));
+        //let target = Rc::new(RefCell::clone(&self.nodes.get(target_index).unwrap()));
+        self.nodes[parent_index].borrow_mut().add_edge(Edge::new(weight, parent, target.clone()));
     }
     
     /// Adds an edge between two nodes, booth directions
     pub fn add_double_edge(&mut self, weight: i32, parent_index: usize, target_index: usize) {
-        let parent = Rc::new(RefCell::clone(&self.nodes.get(parent_index).unwrap()));
-        let target = Rc::new(RefCell::clone(&self.nodes.get(target_index).unwrap()));
+        let parent = Rc::clone(&self.nodes.get(parent_index).unwrap());
+        let target = Rc::clone(&self.nodes.get(target_index).unwrap());
+        //let parent = Rc::new(RefCell::clone(&self.nodes.get(parent_index).unwrap()));
+        //let target = Rc::new(RefCell::clone(&self.nodes.get(target_index).unwrap()));
         self.nodes[parent_index].borrow_mut().add_edge(Edge::new(weight, parent.clone(), target.clone()));
         self.nodes[target_index].borrow_mut().add_edge(Edge::new(weight, target, parent));
     }
