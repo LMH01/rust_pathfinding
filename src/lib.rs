@@ -95,8 +95,10 @@ impl<T: Display> Display for Graph<T> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         let mut graph = String::new();
         for node in &self.nodes {
+            let id = &node.borrow().id;
+            graph.push_str(&format!("{}: ", id));
             for edge in &node.borrow().edges {
-                graph.push_str(&format!("{} --{}--> {}", edge.parent.borrow().id, edge.weight, edge.target.borrow().id));
+                graph.push_str(&format!("(--{}-> {})", edge.weight, edge.target.borrow().id));
             }
             graph.push('\n');
         }
@@ -111,10 +113,11 @@ mod tests {
     #[test]
     fn some_test() {
         let mut graph = Graph::new();
-        graph.add_node(Node::new(1));
-        graph.add_node(Node::new(2));
-        graph.add_node(Node::new(3));
+        graph.add_node(Node::new("Siegburg"));
+        graph.add_node(Node::new("Bonn"));
+        graph.add_node(Node::new("Köln"));
         graph.add_edge(5, 0, 1);
+        graph.add_edge(7, 0, 2);
         graph.add_double_edge(10, 1, 2);
         println!("{}", graph);
     }
