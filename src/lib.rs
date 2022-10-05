@@ -26,6 +26,14 @@ impl<T: Display + Eq> Edge<T> {
     }
 }
 
+impl<T: Display + Eq> PartialEq for Edge<T> {
+    fn eq(&self, other: &Self) -> bool {
+        self.parent.borrow().id.eq(&other.parent.borrow().id) 
+            && self.target.borrow().id.eq(&other.target.borrow().id)
+            && self.weight.eq(&other.weight)
+    }
+}
+
 /// A node inside the graph
 #[derive(Clone)]
 pub struct Node<T: Display> {
