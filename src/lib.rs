@@ -11,7 +11,7 @@ pub struct Edge<T: Display> {
     pub target: Rc<RefCell<Node<T>>>,
 }
 
-impl<T: Display> Edge<T> {
+impl<T: Display + Eq> Edge<T> {
     /// Creates a new edge
     /// # Params
     /// - `weight` the weight of this edge
@@ -60,7 +60,7 @@ pub struct Graph<T: Display> {
     nodes: Vec<Rc<RefCell<Node<T>>>>,
 }
 
-impl<'a, T: Display + Clone> Graph<T> {
+impl<'a, T: Display + Clone + Eq> Graph<T> {
     /// Creates a new graph
     pub fn new() -> Self {
         Self {
@@ -87,6 +87,16 @@ impl<'a, T: Display + Clone> Graph<T> {
         let target = Rc::new(RefCell::clone(&self.nodes.get(target_index).unwrap()));
         self.nodes[parent_index].borrow_mut().add_edge(Edge::new(weight, parent.clone(), target.clone()));
         self.nodes[target_index].borrow_mut().add_edge(Edge::new(weight, target, parent));
+    }
+
+    /// Searches for the id and returns the index if found.
+    pub fn get_index_by_id(&self, id: T) -> Option<usize> {
+        for (index, node) in self.nodes.iter().enumerate() {
+            if node.borrow().id.eq(&id) {
+                return Some(index);
+            }
+        }
+        None
     }
 }
 
@@ -116,9 +126,11 @@ mod tests {
         graph.add_node(Node::new("Siegburg"));
         graph.add_node(Node::new("Bonn"));
         graph.add_node(Node::new("Köln"));
+        graph.add_node(Node::new("Troisdorf"));
         graph.add_edge(5, 0, 1);
         graph.add_edge(7, 0, 2);
         graph.add_double_edge(10, 1, 2);
+        graph.add_edge(2, graph.get_index_by_id("Troisdorf").unwrap(), graph.get_index_by_id("Köln").unwrap());
         println!("{}", graph);
     }
 }
