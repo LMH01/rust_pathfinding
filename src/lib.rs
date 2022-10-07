@@ -39,6 +39,8 @@ impl<T: Display + Eq> PartialEq for Edge<T> {
 pub struct Node<T: Display> {
     id: T,
     edges: Vec<Edge<T>>,
+    distance: i32,
+    shortest_path: Vec<Rc<RefCell<Node<T>>>>,
 }
 
 impl<T: Display> Display for Node<T> {
@@ -54,12 +56,24 @@ impl<T: Display> Node<T> {
         Self {
             id,
             edges: Vec::new(),
+            distance: i32::MAX,
+            shortest_path: Vec::new(),
         }
     }
 
     /// Adds an edge to the node
     pub fn add_edge(&mut self, edge: Edge<T>) {
         self.edges.push(edge)
+    }
+
+    /// Returns the distance of this node.
+    pub fn distance(&self) -> i32 {
+        self.distance
+    }
+
+    /// Sets the total distance of this node, used when running the shortest path algorithm.
+    pub fn set_distance(&mut self, distance: i32) {
+        self.distance = distance;
     }
 }
 
@@ -116,6 +130,81 @@ impl<'a, T: Display + Clone + Eq> Graph<T> {
         }
         None
     }
+
+    /// Calculates the shortest distance between two nodes.
+    /// # Params
+    /// `start_id` - The id of the start node
+    /// `target_id` - The id of the target node
+    /// # Panics
+    /// Panics when the graph does not contain the start or target id.
+    /// # Returns
+    /// `Some(length)` when the shortest path was found.
+    /// `None` when no path between the two nodes exists.
+    pub fn shortest_path_djikstra(&mut self, start_id: T, target_id: T) -> Option<i32> {
+        let start = &self.nodes[self.get_index_by_id(start_id).unwrap()].clone();
+        let target = &self.nodes[self.get_index_by_id(target_id).unwrap()].clone();
+        start.borrow_mut().set_distance(0);
+        let mut open_nodes: Vec<Rc<RefCell<Node<T>>>> = Vec::new();
+        let mut closed_nodes: Vec<Rc<RefCell<Node<T>>>> = Vec::new();
+        open_nodes.push(start.clone());
+
+        while !open_nodes.is_empty() {
+            let node = pop_lowest_distance_node(&mut open_nodes).unwrap();
+            for edge in &node.borrow().edges {
+                let target = &edge.target;
+                let edge_weight = edge.weight;
+                if !closed_nodes.contains(target) {
+                    calc_min_distance(target, edge_weight, &node);
+                    open_nodes.push(target.clone());
+                }
+            }
+            closed_nodes.push(node);
+        }
+
+        let target_distance = target.borrow().distance;
+        self.reset_nodes();
+        if target_distance == i32::MAX {
+            None
+        } else {
+            Some(target_distance)
+        }
+    }
+
+    /// Resets the distance of each node in the graph back to `i32::MAX`.
+    /// 
+    /// Should be called after `shortest_path_djikstra` has run, otherwise the next call might not result in the correct distance.
+    fn reset_nodes(&mut self) {
+        for node in self.nodes.iter_mut() {
+            node.borrow_mut().set_distance(i32::MAX);
+        }
+    }
+}
+
+/// Removes the node with the lowest distance and returns it.
+fn pop_lowest_distance_node<T: Display>(nodes: &mut Vec<Rc<RefCell<Node<T>>>>) -> Option<Rc<RefCell<Node<T>>>> {
+    let mut lowest_distance_node: Option<Rc<RefCell<Node<T>>>> = None;
+    let mut lowest_distance = i32::MAX;
+    let mut index_to_remove: Option<usize> = None;
+    for (index, node) in nodes.iter().enumerate() {
+        let node_distance = node.borrow().distance();
+        if node_distance < lowest_distance {
+            lowest_distance = node_distance;
+            lowest_distance_node = Some(node.clone());
+            index_to_remove = Some(index);
+        }
+    }
+    nodes.remove(index_to_remove.unwrap());
+    lowest_distance_node
+}
+
+fn calc_min_distance<T: Display>(node: &Rc<RefCell<Node<T>>>, weight: i32, source: &Rc<RefCell<Node<T>>>) {
+    let source_distance = source.borrow().distance();
+    if source_distance + weight < node.borrow().distance() {
+        node.borrow_mut().set_distance(source_distance + weight);
+        let mut shortest_path = source.borrow().shortest_path.clone();
+        shortest_path.push(source.clone());
+        node.borrow_mut().shortest_path = shortest_path;
+    }
 }
 
 impl<T: Display> Display for Graph<T> {
@@ -145,10 +234,20 @@ mod tests {
         graph.add_node(Node::new("Bonn"));
         graph.add_node(Node::new("Köln"));
         graph.add_node(Node::new("Troisdorf"));
+        graph.add_node(Node::new("Bergheim"));
         graph.add_edge(5, 0, 1);
-        graph.add_edge(7, 0, 2);
-        graph.add_double_edge(10, 1, 2);
-        graph.add_edge(2, graph.get_index_by_id("Troisdorf").unwrap(), graph.get_index_by_id("Köln").unwrap());
+        graph.add_edge(6, 0, 2);
+        graph.add_edge(2, 1, 0);
+        graph.add_edge(9, 1, 3);
+        graph.add_edge(7, 2, 0);
+        graph.add_edge(2, 2, 3);
+        graph.add_edge(5, 3, 2);
+        graph.add_edge(1, 3, 1);
+        graph.add_edge(10, 3, 4);
         println!("{}", graph);
+        //println!("Length: {}", graph.shortest_path("Siegburg", "Troisdorf").unwrap());
+        println!("Length: {}", graph.shortest_path_djikstra("Siegburg", "Troisdorf").unwrap());
+        println!("Length: {}", graph.shortest_path_djikstra("Bonn", "Köln").unwrap());
+        println!("Length: {}", graph.shortest_path_djikstra("Siegburg", "Bergheim").unwrap_or(-1));
     }
 }
