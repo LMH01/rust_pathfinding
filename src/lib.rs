@@ -144,6 +144,70 @@ impl<'a, T: Display + Clone + Eq> Graph<T> {
             node.borrow_mut().set_distance(i32::MAX);
         }
     }
+
+    /// Create a graph from a 2D vector containing i32.
+    /// 
+    /// The i32 value is the edge weight of each edge leading into that node.
+    /// # Example
+    /// ```
+    /// use lmh01_pathfinding::{Graph, djikstra};
+    /// 
+    /// // Prepare example vector
+    /// let mut vec: Vec<Vec<i32>> = Vec::new();
+    /// let vec_inner_1 = vec![3, 4, 5];
+    /// let vec_inner_2 = vec![1, 2, 3];
+    /// let vec_inner_3 = vec![1, 8, 2];
+    /// vec.push(vec_inner_1);
+    /// vec.push(vec_inner_2);
+    /// vec.push(vec_inner_3);
+    /// 
+    /// // Create graph from example vector
+    /// let graph = Graph::<String>::from_string_vec(&vec);
+    /// 
+    /// // Run djikstra's algorithm
+    /// assert_eq!(8, djikstra(graph.node_by_id(String::from("[0|0]")).unwrap(), graph.node_by_id(String::from("[2|2]")).unwrap()).unwrap_or(-1));
+    /// ```
+    pub fn from_string_vec(vec: &Vec<Vec<i32>>) -> Graph<String> {
+        let mut graph = Graph::new();
+        for (i_y, y) in vec.iter().enumerate() {
+            for (i_x, _x) in y.iter().enumerate() {
+                graph.add_node(Node::new(String::from(format!("[{}|{}]", i_x, i_y))));
+            }
+        }
+        for (i_y, y) in vec.iter().enumerate() {
+            let max_x_size = y.len();
+            for (i_x, x) in y.iter().enumerate() {
+                for neighbor in neighbor_positions((i_x, i_y), max_x_size, vec.len()) {
+                    graph.add_edge(*x, graph.get_index_by_id(format!("[{}|{}]", neighbor.0, neighbor.1)).unwrap(), graph.get_index_by_id(String::from(format!("[{}|{}]", i_x, i_y))).unwrap());
+                }
+            }
+        }
+        graph
+    }
+
+}
+
+impl<T: Display> Display for Graph<T> {
+    /// Formats the graph to show all edges between nodes
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let mut graph = String::new();
+        graph.push_str(&format!("{:13} | {:08} | edges\n", "id", "distance"));
+        graph.push_str("--------------------------------------------------------------------\n");
+        for node in &self.nodes {
+            let id = &node.borrow().id;
+            let distance = node.borrow().distance;
+            if distance != i32::MAX {
+                graph.push_str(&format!("{:13} | {:8} | ", id, distance));
+            } else {
+                graph.push_str(&format!("{:13} | {:8} | ", id, ""));
+            }
+            for edge in &node.borrow().edges {
+                graph.push_str(&format!("(--{}-> {})", edge.weight, edge.target.borrow().id));
+            }
+            graph.push('\n');
+        }
+        write!(f, "{}", graph)
+    }
 }
 
 /// Calculates the shortest distance between two nodes.
@@ -264,27 +328,33 @@ fn calc_min_distance<T: Display + Eq>(node: &Rc<RefCell<Node<T>>>, weight: i32, 
     }
 }
 
-impl<T: Display> Display for Graph<T> {
-    /// Formats the graph to show all edges between nodes
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        let mut graph = String::new();
-        graph.push_str(&format!("{:13} | {:08} | edges\n", "id", "distance"));
-        graph.push_str("--------------------------------------------------------------------\n");
-        for node in &self.nodes {
-            let id = &node.borrow().id;
-            let distance = node.borrow().distance;
-            if distance != i32::MAX {
-                graph.push_str(&format!("{:13} | {:8} | ", id, distance));
-            } else {
-                graph.push_str(&format!("{:13} | {:8} | ", id, ""));
-            }
-            for edge in &node.borrow().edges {
-                graph.push_str(&format!("(--{}-> {})", edge.weight, edge.target.borrow().id));
-            }
-            graph.push('\n');
-        }
-        write!(f, "{}", graph)
+/// Returns the neighboring positions for a position in a 2D graph.
+/// 
+/// # Example
+/// ```
+/// use lmh01_pathfinding::neighbor_positions;
+/// 
+/// let neighbors = neighbor_positions((2,2), 10, 10);
+/// assert_eq!((1, 2), neighbors[0]);
+/// assert_eq!((2, 1), neighbors[1]);
+/// assert_eq!((3, 2), neighbors[2]);
+/// assert_eq!((2, 3), neighbors[3]);
+/// ```
+pub fn neighbor_positions(pos: (usize, usize), max_x_size: usize, max_y_size: usize) -> Vec<(usize, usize)> {
+    let mut positions = Vec::new();
+    if pos.0 != 0 {
+        positions.push((pos.0-1, pos.1));
     }
+    if pos.1 != 0 {
+        positions.push((pos.0, pos.1-1));
+    }
+    if pos.0 != max_x_size-1 {
+        positions.push((pos.0+1, pos.1));
+    }
+    if pos.1 != max_y_size-1 {
+        positions.push((pos.0, pos.1+1));
+    }
+    positions
 }
 
 #[cfg(test)]
@@ -335,5 +405,38 @@ mod tests {
         assert_eq!(5, djikstra(graph.node_by_id('a').unwrap(), graph.node_by_id('d').unwrap()).unwrap_or(-1));
         println!("Length: {}", djikstra(graph.node_by_id('a').unwrap(), graph.node_by_id('d').unwrap()).unwrap_or(-1));
         println!("{}", graph);
+    }
+
+    #[test]
+    fn neighbor_positions_central() {
+        let neighbors = neighbor_positions((2,2), 10, 10);
+        assert_eq!((1, 2), neighbors[0]);
+        assert_eq!((2, 1), neighbors[1]);
+        assert_eq!((3, 2), neighbors[2]);
+        assert_eq!((2, 3), neighbors[3]);
+    }
+
+    #[test]
+    fn neighbor_positions_edge() {
+        let neighbors = neighbor_positions((0,0), 10, 10);
+        assert_eq!((1,0), neighbors[0]);
+        assert_eq!((0,1), neighbors[1]);
+        let neighbors = neighbor_positions((10, 10), 10, 10);
+        assert_eq!((9, 10), neighbors[0]);
+        assert_eq!((10, 9), neighbors[1]);
+    }
+
+    #[test]
+    fn graph_from_vec() {
+        let mut vec: Vec<Vec<i32>> = Vec::new();
+        let vec_inner_1 = vec![3, 4, 5];
+        let vec_inner_2 = vec![1, 2, 3];
+        let vec_inner_3 = vec![1, 8, 2];
+        vec.push(vec_inner_1);
+        vec.push(vec_inner_2);
+        vec.push(vec_inner_3);
+        let graph = Graph::<String>::from_string_vec(&vec);
+        assert_eq!(8, djikstra(graph.node_by_id(String::from("[0|0]")).unwrap(), graph.node_by_id(String::from("[2|2]")).unwrap()).unwrap_or(-1));
+        assert_eq!(7, djikstra(graph.node_by_id(String::from("[0|1]")).unwrap(), graph.node_by_id(String::from("[2|2]")).unwrap()).unwrap_or(-1));
     }
 }
