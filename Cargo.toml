@@ -1,5 +1,5 @@
 [package]
-name = "graphs"
+name = "lmh01_graphs"
 version = "0.1.0"
 edition = "2021"
 
