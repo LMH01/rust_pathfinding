@@ -4,11 +4,11 @@ use std::{fmt::Display, rc::Rc, cell::RefCell};
 #[derive(Clone)]
 pub struct Edge<T: Display> {
     /// The "cost" of moving along this edge
-    pub weight: i32,
+    weight: i32,
     /// The parent of this edge
-    pub parent: Rc<RefCell<Node<T>>>,
+    parent: Rc<RefCell<Node<T>>>,
     /// Where this edge lands
-    pub target: Rc<RefCell<Node<T>>>,
+    target: Rc<RefCell<Node<T>>>,
 }
 
 impl<T: Display + Eq> Edge<T> {
@@ -17,7 +17,7 @@ impl<T: Display + Eq> Edge<T> {
     /// - `weight` the weight of this edge
     /// - `parent` the node from which the edge originates
     /// - `target` the node to which the edge lands
-    pub fn new(weight: i32, parent: Rc<RefCell<Node<T>>>, target: Rc<RefCell<Node<T>>>) -> Self {
+    fn new(weight: i32, parent: Rc<RefCell<Node<T>>>, target: Rc<RefCell<Node<T>>>) -> Self {
         Self {
             weight,
             parent,
@@ -49,8 +49,9 @@ impl<T: Display> Display for Node<T> {
     }
 }
 
-impl<T: Display> Node<T> {
+impl<T: Display + Eq> Node<T> {
     /// Creates a new node
+    /// 
     /// `id` - An identifier for this node, should be unique
     pub fn new(id: T) -> Self {
         Self {
@@ -62,17 +63,12 @@ impl<T: Display> Node<T> {
     }
 
     /// Adds an edge to the node
-    pub fn add_edge(&mut self, edge: Edge<T>) {
+    fn add_edge(&mut self, edge: Edge<T>) {
         self.edges.push(edge)
     }
 
-    /// Returns the distance of this node.
-    pub fn distance(&self) -> i32 {
-        self.distance
-    }
-
     /// Sets the total distance of this node, used when running the shortest path algorithm.
-    pub fn set_distance(&mut self, distance: i32) {
+    fn set_distance(&mut self, distance: i32) {
         self.distance = distance;
     }
 }
@@ -106,8 +102,6 @@ impl<'a, T: Display + Clone + Eq> Graph<T> {
     pub fn add_edge(&mut self, weight: i32, parent_index: usize, target_index: usize) {
         let parent = Rc::clone(&self.nodes.get(parent_index).unwrap());
         let target = Rc::clone(&self.nodes.get(target_index).unwrap());
-        //let parent = Rc::new(RefCell::clone(&self.nodes.get(parent_index).unwrap()));
-        //let target = Rc::new(RefCell::clone(&self.nodes.get(target_index).unwrap()));
         self.nodes[parent_index].borrow_mut().add_edge(Edge::new(weight, parent, target.clone()));
     }
     
@@ -131,62 +125,125 @@ impl<'a, T: Display + Clone + Eq> Graph<T> {
         None
     }
 
-    /// Calculates the shortest distance between two nodes.
-    /// # Params
-    /// `start_id` - The id of the start node
-    /// `target_id` - The id of the target node
-    /// # Panics
-    /// Panics when the graph does not contain the start or target id.
-    /// # Returns
-    /// `Some(length)` when the shortest path was found.
-    /// `None` when no path between the two nodes exists.
-    pub fn shortest_path_djikstra(&mut self, start_id: T, target_id: T) -> Option<i32> {
-        let start = &self.nodes[self.get_index_by_id(start_id).unwrap()].clone();
-        let target = &self.nodes[self.get_index_by_id(target_id).unwrap()].clone();
-        self.reset_nodes();
-        start.borrow_mut().set_distance(0);
-        let mut open_nodes: Vec<Rc<RefCell<Node<T>>>> = Vec::new();
-        let mut closed_nodes: Vec<Rc<RefCell<Node<T>>>> = Vec::new();
-        open_nodes.push(start.clone());
-
-        while !open_nodes.is_empty() {
-            let node = pop_lowest_distance_node(&mut open_nodes).unwrap();
-            for edge in &node.borrow().edges {
-                let target = &edge.target;
-                let edge_weight = edge.weight;
-                if !closed_nodes.contains(target) {
-                    calc_min_distance(target, edge_weight, &node);
-                    open_nodes.push(target.clone());
-                }
+    /// Returns a reference to the node or `None` if the id is not used.
+    pub fn node_by_id(&self, id: T) -> Option<Rc<RefCell<Node<T>>>> {
+        for node in self.nodes.iter() {
+            if node.borrow().id.eq(&id) {
+                return Some(node.clone());
             }
-            closed_nodes.push(node);
         }
-
-        let target_distance = target.borrow().distance;
-        if target_distance == i32::MAX {
-            None
-        } else {
-            Some(target_distance)
-        }
+        None
     }
+
 
     /// Resets the distance of each node in the graph back to `i32::MAX`.
     /// 
-    /// Should be called after `shortest_path_djikstra` has run, otherwise the next call might not result in the correct distance.
-    fn reset_nodes(&mut self) {
+    /// Should be called after [djikstra](./fn.djikstra.html) has run, otherwise the next call might not result in the correct distance.
+    pub fn reset_nodes(&mut self) {
         for node in self.nodes.iter_mut() {
             node.borrow_mut().set_distance(i32::MAX);
         }
     }
 }
 
+/// Calculates the shortest distance between two nodes.
+/// This will utilize the algorithm by [djikstra](https://en.wikipedia.org/wiki/Dijkstra%27s_algorithm).
+/// 
+/// The distance field in each node should be set to `i32:MAX` before this function is called.
+/// When the nodes are organized using the [Graph](struct.Graph.html) struct the function [reset_nodes](struct.Graph.html#method.reset_nodes) may be used to reset the distance field.
+/// # Params
+/// `start_node` - The start node
+/// 
+/// `target_node` - The target node
+/// # Returns
+/// `Some(length)` when the shortest path was found.
+/// 
+/// `None` when no path between the two nodes exists.
+/// 
+/// # Example
+/// ```rust
+/// use lmh01_pathfinding::{Node, Graph, djikstra};
+/// 
+/// // Create new graph
+/// let mut graph: Graph<char> = Graph::new();
+/// 
+/// // Add nodes to graph
+/// let node_a_idx = graph.add_node(Node::new('a'));
+/// let node_b_idx = graph.add_node(Node::new('b'));
+/// let node_c_idx = graph.add_node(Node::new('c'));
+/// let node_d_idx = graph.add_node(Node::new('d'));
+/// let node_e_idx = graph.add_node(Node::new('e'));
+/// 
+/// // Add edges between nodes
+/// graph.add_edge(3, node_a_idx, node_b_idx);
+/// graph.add_edge(4, node_a_idx, node_c_idx);
+/// graph.add_edge(5, node_b_idx, node_a_idx);
+/// graph.add_edge(2, node_b_idx, node_d_idx);
+/// graph.add_edge(9, node_c_idx, node_a_idx);
+/// graph.add_edge(1, node_c_idx, node_d_idx);
+/// graph.add_edge(3, node_d_idx, node_b_idx);
+/// graph.add_edge(7, node_d_idx, node_c_idx);
+/// 
+/// // Run djikstra's algorithm to determine the shortest path, result contains the shortest distance.
+/// let result = djikstra(graph.node_by_id('a').unwrap(), graph.node_by_id('d').unwrap()).unwrap_or(-1);
+/// assert_eq!(5, result);
+/// 
+/// // Reset node distances before running the algorithm again
+/// graph.reset_nodes();
+/// 
+/// // Run algorithm again
+/// let result = djikstra(graph.node_by_id('b').unwrap(), graph.node_by_id('c').unwrap()).unwrap_or(-1);
+/// assert_eq!(9, result);
+/// 
+/// // Reset nodes again
+/// 
+/// // Run algorithm again, returns -1 because no node exists that connects e to the rest of the graph.
+/// let result = djikstra(graph.node_by_id('a').unwrap(), graph.node_by_id('e').unwrap()).unwrap_or(-1);
+/// assert_eq!(-1, result);
+/// 
+/// ```
+/// ```should_panic
+/// use lmh01_pathfinding::{Node, Graph, djikstra};
+/// 
+/// let mut graph = Graph::new();
+/// graph.add_node(Node::new('a'));
+/// // Panics because the node b does not exist in the graph.
+/// let result = djikstra(graph.node_by_id('a').unwrap(), graph.node_by_id('b').unwrap()).unwrap_or(-1);
+/// ```
+pub fn djikstra<T: Display + Clone + Eq>(start_node: Rc<RefCell<Node<T>>>, target_node: Rc<RefCell<Node<T>>>) -> Option<i32> {
+    start_node.borrow_mut().set_distance(0);
+    let mut open_nodes: Vec<Rc<RefCell<Node<T>>>> = Vec::new();
+    let mut closed_nodes: Vec<Rc<RefCell<Node<T>>>> = Vec::new();
+    open_nodes.push(start_node.clone());
+
+    while !open_nodes.is_empty() {
+        let node = pop_lowest_distance_node(&mut open_nodes).unwrap();
+        for edge in &node.borrow().edges {
+            let target = &edge.target;
+            let edge_weight = edge.weight;
+            if !closed_nodes.contains(target) {
+                calc_min_distance(target, edge_weight, &node);
+                open_nodes.push(target.clone());
+            }
+        }
+        closed_nodes.push(node);
+    }
+
+    let target_distance = target_node.borrow().distance;
+    if target_distance == i32::MAX {
+        None
+    } else {
+        Some(target_distance)
+    }
+}
+
 /// Removes the node with the lowest distance and returns it.
-fn pop_lowest_distance_node<T: Display>(nodes: &mut Vec<Rc<RefCell<Node<T>>>>) -> Option<Rc<RefCell<Node<T>>>> {
+fn pop_lowest_distance_node<T: Display + Eq>(nodes: &mut Vec<Rc<RefCell<Node<T>>>>) -> Option<Rc<RefCell<Node<T>>>> {
     let mut lowest_distance_node: Option<Rc<RefCell<Node<T>>>> = None;
     let mut lowest_distance = i32::MAX;
     let mut index_to_remove: Option<usize> = None;
     for (index, node) in nodes.iter().enumerate() {
-        let node_distance = node.borrow().distance();
+        let node_distance = node.borrow().distance;
         if node_distance < lowest_distance {
             lowest_distance = node_distance;
             lowest_distance_node = Some(node.clone());
@@ -197,9 +254,9 @@ fn pop_lowest_distance_node<T: Display>(nodes: &mut Vec<Rc<RefCell<Node<T>>>>) -
     lowest_distance_node
 }
 
-fn calc_min_distance<T: Display>(node: &Rc<RefCell<Node<T>>>, weight: i32, source: &Rc<RefCell<Node<T>>>) {
-    let source_distance = source.borrow().distance();
-    if source_distance + weight < node.borrow().distance() {
+fn calc_min_distance<T: Display + Eq>(node: &Rc<RefCell<Node<T>>>, weight: i32, source: &Rc<RefCell<Node<T>>>) {
+    let source_distance = source.borrow().distance;
+    if source_distance + weight < node.borrow().distance {
         node.borrow_mut().set_distance(source_distance + weight);
         let mut shortest_path = source.borrow().shortest_path.clone();
         shortest_path.push(source.clone());
@@ -250,14 +307,33 @@ mod tests {
         graph.add_edge(2, 2, 3);
         graph.add_edge(5, 3, 2);
         graph.add_edge(1, 3, 1);
-        graph.add_edge(10, 3, 4);
-        graph.add_edge(4, 4, 0);
+        graph.add_double_edge(10, 3, 4);
+        println!("Length: {}", djikstra(graph.node_by_id("Siegburg").unwrap(), graph.node_by_id("Troisdorf").unwrap()).unwrap());
+        graph.reset_nodes();
+        println!("Length: {}", djikstra(graph.node_by_id("Bonn").unwrap(), graph.node_by_id("Köln").unwrap()).unwrap());
         println!("{}", graph);
-        //println!("Length: {}", graph.shortest_path("Siegburg", "Troisdorf").unwrap());
-        println!("Length: {}", graph.shortest_path_djikstra("Siegburg", "Troisdorf").unwrap());
-        println!("Length: {}", graph.shortest_path_djikstra("Bonn", "Köln").unwrap());
+        graph.reset_nodes();
+        println!("Length: {}", djikstra(graph.node_by_id("Siegburg").unwrap(), graph.node_by_id("Bergheim").unwrap()).unwrap_or(-1));
         println!("{}", graph);
-        println!("Length: {}", graph.shortest_path_djikstra("Siegburg", "Bergheim").unwrap_or(-1));
+    }
+
+    #[test]
+    fn djikstra_test() {
+        let mut graph: Graph<char> = Graph::new();
+        let node_a_idx = graph.add_node(Node::new('a'));
+        let node_b_idx = graph.add_node(Node::new('b'));
+        let node_c_idx = graph.add_node(Node::new('c'));
+        let node_d_idx = graph.add_node(Node::new('d'));
+        graph.add_edge(3, node_a_idx, node_b_idx);
+        graph.add_edge(4, node_a_idx, node_c_idx);
+        graph.add_edge(5, node_b_idx, node_a_idx);
+        graph.add_edge(2, node_b_idx, node_d_idx);
+        graph.add_edge(9, node_c_idx, node_a_idx);
+        graph.add_edge(1, node_c_idx, node_d_idx);
+        graph.add_edge(3, node_d_idx, node_b_idx);
+        graph.add_edge(7, node_d_idx, node_c_idx);
+        assert_eq!(5, djikstra(graph.node_by_id('a').unwrap(), graph.node_by_id('d').unwrap()).unwrap_or(-1));
+        println!("Length: {}", djikstra(graph.node_by_id('a').unwrap(), graph.node_by_id('d').unwrap()).unwrap_or(-1));
         println!("{}", graph);
     }
 }
