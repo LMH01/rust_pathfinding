@@ -1,5 +1,5 @@
 [package]
-name = "lmh01_graphs"
+name = "lmh01_pathfinding"
 version = "0.1.0"
 edition = "2021"
 
