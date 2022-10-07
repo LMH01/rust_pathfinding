@@ -143,6 +143,7 @@ impl<'a, T: Display + Clone + Eq> Graph<T> {
     pub fn shortest_path_djikstra(&mut self, start_id: T, target_id: T) -> Option<i32> {
         let start = &self.nodes[self.get_index_by_id(start_id).unwrap()].clone();
         let target = &self.nodes[self.get_index_by_id(target_id).unwrap()].clone();
+        self.reset_nodes();
         start.borrow_mut().set_distance(0);
         let mut open_nodes: Vec<Rc<RefCell<Node<T>>>> = Vec::new();
         let mut closed_nodes: Vec<Rc<RefCell<Node<T>>>> = Vec::new();
@@ -162,7 +163,6 @@ impl<'a, T: Display + Clone + Eq> Graph<T> {
         }
 
         let target_distance = target.borrow().distance;
-        self.reset_nodes();
         if target_distance == i32::MAX {
             None
         } else {
@@ -211,9 +211,16 @@ impl<T: Display> Display for Graph<T> {
     /// Formats the graph to show all edges between nodes
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         let mut graph = String::new();
+        graph.push_str(&format!("{:13} | {:08} | edges\n", "id", "distance"));
+        graph.push_str("--------------------------------------------------------------------\n");
         for node in &self.nodes {
             let id = &node.borrow().id;
-            graph.push_str(&format!("{}: ", id));
+            let distance = node.borrow().distance;
+            if distance != i32::MAX {
+                graph.push_str(&format!("{:13} | {:8} | ", id, distance));
+            } else {
+                graph.push_str(&format!("{:13} | {:8} | ", id, ""));
+            }
             for edge in &node.borrow().edges {
                 graph.push_str(&format!("(--{}-> {})", edge.weight, edge.target.borrow().id));
             }
@@ -244,10 +251,13 @@ mod tests {
         graph.add_edge(5, 3, 2);
         graph.add_edge(1, 3, 1);
         graph.add_edge(10, 3, 4);
+        graph.add_edge(4, 4, 0);
         println!("{}", graph);
         //println!("Length: {}", graph.shortest_path("Siegburg", "Troisdorf").unwrap());
         println!("Length: {}", graph.shortest_path_djikstra("Siegburg", "Troisdorf").unwrap());
         println!("Length: {}", graph.shortest_path_djikstra("Bonn", "Köln").unwrap());
+        println!("{}", graph);
         println!("Length: {}", graph.shortest_path_djikstra("Siegburg", "Bergheim").unwrap_or(-1));
+        println!("{}", graph);
     }
 }
