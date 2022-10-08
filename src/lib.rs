@@ -1,4 +1,4 @@
-use std::{fmt::Display, rc::Rc, cell::RefCell, collections::{HashMap, BinaryHeap}};
+use std::{fmt::Display, rc::Rc, cell::RefCell, collections::{HashMap, BinaryHeap, HashSet}, hash::Hash};
 
 /// An edge between two nodes inside the graph
 #[derive(Clone, Eq)]
@@ -295,28 +295,29 @@ impl<T: Display> Display for Graph<T> {
 /// // Panics because the node b does not exist in the graph.
 /// let result = djikstra(graph.node_by_id('a').unwrap(), graph.node_by_id('b').unwrap()).unwrap_or(-1);
 /// ```
-pub fn djikstra<T: Display + Clone + Eq>(start_node: Rc<RefCell<Node<T>>>, target_node: Rc<RefCell<Node<T>>>) -> Option<i32> {
+pub fn djikstra<T: Display + Clone + Eq + Hash>(start_node: Rc<RefCell<Node<T>>>, target_node: Rc<RefCell<Node<T>>>) -> Option<i32> {
     start_node.borrow_mut().set_distance(0);
-    let mut open_nodes: Vec<Rc<RefCell<Node<T>>>> = Vec::new();
-    let mut closed_nodes: Vec<Rc<RefCell<Node<T>>>> = Vec::new();
+    let mut open_nodes: BinaryHeap<Rc<RefCell<Node<T>>>> = BinaryHeap::new();
+    let mut closed_node_ids: HashSet<T> = HashSet::new();
+    //let mut closed_nodes: Vec<Rc<RefCell<Node<T>>>> = Vec::new();
     open_nodes.push(start_node.clone());
 
     while !open_nodes.is_empty() {
-        let node = pop_lowest_distance_node(&mut open_nodes).unwrap();
+        let node = open_nodes.pop().unwrap();
         if cfg!(feature = "debug") {
             if open_nodes.len() % 100 == 0 {
-                println!("Nodes open / closed: {}/{}", open_nodes.len(), closed_nodes.len());
+                println!("Nodes open / closed: {}/{}", open_nodes.len(), closed_node_ids.len());
             }
         }
         for edge in &node.borrow().edges {
             let target = &edge.target;
             let edge_weight = edge.weight;
-            if !closed_nodes.contains(target) {
+            if !closed_node_ids.contains(&target.borrow().id) {
                 calc_min_distance(target, edge_weight, &node);
                 open_nodes.push(target.clone());
             }
         }
-        closed_nodes.push(node);
+        closed_node_ids.insert(node.borrow().clone().id);
     }
 
     let target_distance = target_node.borrow().distance;
@@ -325,23 +326,6 @@ pub fn djikstra<T: Display + Clone + Eq>(start_node: Rc<RefCell<Node<T>>>, targe
     } else {
         Some(target_distance)
     }
-}
-
-/// Removes the node with the lowest distance and returns it.
-fn pop_lowest_distance_node<T: Display + Eq>(nodes: &mut Vec<Rc<RefCell<Node<T>>>>) -> Option<Rc<RefCell<Node<T>>>> {
-    let mut lowest_distance_node: Option<Rc<RefCell<Node<T>>>> = None;
-    let mut lowest_distance = i32::MAX;
-    let mut index_to_remove: Option<usize> = None;
-    for (index, node) in nodes.iter().enumerate() {
-        let node_distance = node.borrow().distance;
-        if node_distance < lowest_distance {
-            lowest_distance = node_distance;
-            lowest_distance_node = Some(node.clone());
-            index_to_remove = Some(index);
-        }
-    }
-    nodes.remove(index_to_remove.unwrap());
-    lowest_distance_node
 }
 
 fn calc_min_distance<T: Display + Eq>(node: &Rc<RefCell<Node<T>>>, weight: i32, source: &Rc<RefCell<Node<T>>>) {
