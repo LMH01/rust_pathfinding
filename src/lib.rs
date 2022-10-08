@@ -298,6 +298,7 @@ impl<T: Display> Display for Graph<T> {
 pub fn djikstra<T: Display + Clone + Eq + Hash>(start_node: Rc<RefCell<Node<T>>>, target_node: Rc<RefCell<Node<T>>>) -> Option<i32> {
     start_node.borrow_mut().set_distance(0);
     let mut open_nodes: BinaryHeap<Rc<RefCell<Node<T>>>> = BinaryHeap::new();
+    let mut open_node_ids: HashSet<T> = HashSet::new();
     let mut closed_node_ids: HashSet<T> = HashSet::new();
     //let mut closed_nodes: Vec<Rc<RefCell<Node<T>>>> = Vec::new();
     open_nodes.push(start_node.clone());
@@ -305,7 +306,6 @@ pub fn djikstra<T: Display + Clone + Eq + Hash>(start_node: Rc<RefCell<Node<T>>>
     while !open_nodes.is_empty() {
         let node = open_nodes.pop().unwrap();
         if cfg!(feature = "debug") {
-            let text = String::from("Nodes open / closed: ");
             let len = open_nodes.len();
             let closed_len = closed_node_ids.len();
             if len % 100 == 0 && len <= 10000 {
@@ -321,9 +321,10 @@ pub fn djikstra<T: Display + Clone + Eq + Hash>(start_node: Rc<RefCell<Node<T>>>
         for edge in &node.borrow().edges {
             let target = &edge.target;
             let edge_weight = edge.weight;
-            if !closed_node_ids.contains(&target.borrow().id) {
+            if !closed_node_ids.contains(&target.borrow().id) && !open_node_ids.contains(&target.borrow().id){
                 calc_min_distance(target, edge_weight, &node);
                 open_nodes.push(target.clone());
+                open_node_ids.insert(target.borrow().clone().id);
             }
         }
         closed_node_ids.insert(node.borrow().clone().id);
@@ -479,17 +480,16 @@ mod tests {
     }
 
     #[test]
-    #[ignore]
     fn big_vec() {
         let mut vec: Vec<Vec<i32>> = Vec::new();
-        for i in 1..=50 {
+        for i in 1..=25 {
             let mut inner_vec = Vec::new();
-            for j in 1..=50 {
+            for j in 1..=25 {
                 inner_vec.push(i*j);
             }
             vec.push(inner_vec);
         }
         let graph = Graph::<String>::from_i32_vec(&vec);
-        assert_eq!(8, djikstra(graph.node_by_id(String::from("[0|0]")).unwrap(), graph.node_by_id(String::from("[20|20]")).unwrap()).unwrap_or(-1));
+        assert_eq!(5060, djikstra(graph.node_by_id(String::from("[0|0]")).unwrap(), graph.node_by_id(String::from("[20|20]")).unwrap()).unwrap_or(-1));
     }
 }
