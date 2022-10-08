@@ -1,7 +1,7 @@
-use std::{fmt::Display, rc::Rc, cell::RefCell, collections::HashMap};
+use std::{fmt::Display, rc::Rc, cell::RefCell, collections::{HashMap, BinaryHeap}};
 
 /// An edge between two nodes inside the graph
-#[derive(Clone)]
+#[derive(Clone, Eq)]
 pub struct Edge<T: Display> {
     /// The "cost" of moving along this edge
     weight: i32,
@@ -35,18 +35,12 @@ impl<T: Display + Eq> PartialEq for Edge<T> {
 }
 
 /// A node inside the graph
-#[derive(Clone)]
+#[derive(Clone, Eq)]
 pub struct Node<T: Display> {
     id: T,
     edges: Vec<Edge<T>>,
     distance: i32,
     shortest_path: Vec<Rc<RefCell<Node<T>>>>,
-}
-
-impl<T: Display> Display for Node<T> {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{}", self.id)
-    }
 }
 
 impl<T: Display + Eq> Node<T> {
@@ -76,6 +70,24 @@ impl<T: Display + Eq> Node<T> {
 impl<T: Display + Eq> PartialEq for Node<T> {
     fn eq(&self, other: &Self) -> bool {
         self.id == other.id
+    }
+}
+
+impl<T: Display + Eq> Display for Node<T> {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", self.id)
+    }
+}
+
+impl<T: Display + Eq> PartialOrd for Node<T> {
+    fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
+        Some(self.distance.cmp(&other.distance))
+    }
+}
+
+impl<T: Display + Eq> Ord for Node<T> {
+    fn cmp(&self, other: &Self) -> std::cmp::Ordering {
+        self.distance.cmp(&other.distance)
     }
 }
 
@@ -373,6 +385,8 @@ pub fn neighbor_positions(pos: (usize, usize), max_x_size: usize, max_y_size: us
 
 #[cfg(test)]
 mod tests {
+    use std::borrow::Borrow;
+
     use super::*;
 
     #[test]
@@ -455,6 +469,9 @@ mod tests {
     }
 
     #[test]
+
+    #[test]
+    #[ignore]
     fn big_vec() {
         let mut vec: Vec<Vec<i32>> = Vec::new();
         for i in 1..=130 {
