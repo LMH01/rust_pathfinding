@@ -168,11 +168,18 @@ impl<'a, T: Display + Clone + Eq> Graph<T> {
     /// assert_eq!(8, djikstra(graph.node_by_id(String::from("[0|0]")).unwrap(), graph.node_by_id(String::from("[2|2]")).unwrap()).unwrap_or(-1));
     /// ```
     pub fn from_string_vec(vec: &Vec<Vec<i32>>) -> Graph<String> {
+        if cfg!(feature = "debug") {
+            println!("Constructing graph from vector...");
+            println!("Adding nodes...");
+        }
         let mut graph = Graph::new();
         for (i_y, y) in vec.iter().enumerate() {
             for (i_x, _x) in y.iter().enumerate() {
                 graph.add_node(Node::new(String::from(format!("[{}|{}]", i_x, i_y))));
             }
+        }
+        if cfg!(feature = "debug") {
+            println!("Adding edges...");
         }
         for (i_y, y) in vec.iter().enumerate() {
             let max_x_size = y.len();
@@ -282,6 +289,11 @@ pub fn djikstra<T: Display + Clone + Eq>(start_node: Rc<RefCell<Node<T>>>, targe
 
     while !open_nodes.is_empty() {
         let node = pop_lowest_distance_node(&mut open_nodes).unwrap();
+        if cfg!(feature = "debug") {
+            if open_nodes.len() % 100 == 0 {
+                println!("Nodes open / closed: {}/{}", open_nodes.len(), closed_nodes.len());
+            }
+        }
         for edge in &node.borrow().edges {
             let target = &edge.target;
             let edge_weight = edge.weight;
