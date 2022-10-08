@@ -308,13 +308,13 @@ pub fn djikstra<T: Display + Clone + Eq + Hash>(start_node: Rc<RefCell<Node<T>>>
         if cfg!(feature = "debug") {
             let len = open_nodes.len();
             let closed_len = closed_node_ids.len();
-            if len % 100 == 0 && len <= 10000 {
+            if closed_len % 100 == 0 && closed_len <= 10000 {
                 println!("Nodes open / closed: {:12}/{:12}", len, closed_len);
-            } else if len % 1000 == 0 && len <=50000 {
+            } else if closed_len % 1000 == 0 && closed_len <=50000 {
                 println!("Nodes open / closed: {:12}/{:12}", len, closed_len);
-            } else if len % 10000 == 0 && len <=500000 {
+            } else if closed_len % 10000 == 0 && closed_len <=500000 {
                 println!("Nodes open / closed: {:12}/{:12}", len, closed_len);
-            } else if len % 100000 == 0 {
+            } else if closed_len % 100000 == 0 {
                 println!("Nodes open / closed: {:12}/{:12}", len, closed_len);
             }
         }
@@ -482,9 +482,9 @@ mod tests {
     #[test]
     fn big_vec() {
         let mut vec: Vec<Vec<i32>> = Vec::new();
-        for i in 1..=25 {
+        for i in 1..=100 {
             let mut inner_vec = Vec::new();
-            for j in 1..=25 {
+            for j in 1..=100 {
                 inner_vec.push(i*j);
             }
             vec.push(inner_vec);
