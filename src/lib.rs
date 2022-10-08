@@ -305,8 +305,17 @@ pub fn djikstra<T: Display + Clone + Eq + Hash>(start_node: Rc<RefCell<Node<T>>>
     while !open_nodes.is_empty() {
         let node = open_nodes.pop().unwrap();
         if cfg!(feature = "debug") {
-            if open_nodes.len() % 100 == 0 {
-                println!("Nodes open / closed: {}/{}", open_nodes.len(), closed_node_ids.len());
+            let text = String::from("Nodes open / closed: ");
+            let len = open_nodes.len();
+            let closed_len = closed_node_ids.len();
+            if len % 100 == 0 && len <= 10000 {
+                println!("Nodes open / closed: {:12}/{:12}", len, closed_len);
+            } else if len % 1000 == 0 && len <=50000 {
+                println!("Nodes open / closed: {:12}/{:12}", len, closed_len);
+            } else if len % 10000 == 0 && len <=500000 {
+                println!("Nodes open / closed: {:12}/{:12}", len, closed_len);
+            } else if len % 100000 == 0 {
+                println!("Nodes open / closed: {:12}/{:12}", len, closed_len);
             }
         }
         for edge in &node.borrow().edges {
@@ -473,9 +482,9 @@ mod tests {
     #[ignore]
     fn big_vec() {
         let mut vec: Vec<Vec<i32>> = Vec::new();
-        for i in 1..=130 {
+        for i in 1..=50 {
             let mut inner_vec = Vec::new();
-            for j in 1..=130 {
+            for j in 1..=50 {
                 inner_vec.push(i*j);
             }
             vec.push(inner_vec);
