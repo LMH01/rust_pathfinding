@@ -43,7 +43,7 @@ pub struct Node<T: Display> {
     shortest_path: Vec<Rc<RefCell<Node<T>>>>,
 }
 
-impl<T: Display + Eq> Node<T> {
+impl<T: Display + Eq + Clone> Node<T> {
     /// Creates a new node
     /// 
     /// `id` - An identifier for this node, should be unique
@@ -64,6 +64,47 @@ impl<T: Display + Eq> Node<T> {
     /// Sets the total distance of this node, used when running the shortest path algorithm.
     fn set_distance(&mut self, distance: i32) {
         self.distance = distance;
+    }
+
+    /// Returns the shortest path to this node.
+    /// 
+    /// For a node to receive its shortest path a path finding algorithm has to have run beforehand.
+    /// 
+    /// # Example
+    /// ```
+    /// use lmh01_pathfinding::{Graph, Node, djikstra};
+    /// 
+    /// // Prepare graph
+    /// let mut graph: Graph<char> = Graph::new();
+    /// let node_a_idx = graph.add_node(Node::new('a'));
+    /// let node_b_idx = graph.add_node(Node::new('b'));
+    /// let node_c_idx = graph.add_node(Node::new('c'));
+    /// let node_d_idx = graph.add_node(Node::new('d'));
+    /// graph.add_edge(3, node_a_idx, node_b_idx);
+    /// graph.add_edge(4, node_a_idx, node_c_idx);
+    /// graph.add_edge(3, node_b_idx, node_a_idx);
+    /// graph.add_edge(2, node_b_idx, node_d_idx);
+    /// graph.add_edge(9, node_c_idx, node_a_idx);
+    /// graph.add_edge(1, node_c_idx, node_d_idx);
+    /// graph.add_edge(3, node_d_idx, node_b_idx);
+    /// graph.add_edge(7, node_d_idx, node_c_idx);
+    /// djikstra(graph.node_by_id('a').unwrap(), graph.node_by_id('d').unwrap()).unwrap_or(-1);
+    /// 
+    /// // Get shortest path
+    /// let string = graph.node_by_id('d').unwrap().borrow_mut().shortest_path();
+    /// assert_eq!("a -> b -> d", string)
+    /// ```
+    pub fn shortest_path(&self) -> String {
+        let mut path: Vec<T> = Vec::new();
+        for previous in &self.shortest_path {
+            path.push(previous.borrow().id.clone());
+        }
+        let mut path_string = String::new();
+        for previous in path {
+            path_string.push_str(&format!("{} -> ", previous));
+        }
+        path_string.push_str(&format!("{}", self.id));
+        path_string
     }
 }
 
@@ -155,6 +196,18 @@ impl<'a, T: Display + Clone + Eq> Graph<T> {
         for node in self.nodes.iter_mut() {
             node.borrow_mut().set_distance(i32::MAX);
         }
+    }
+
+    /// Prints the shortest path to the target node.
+    /// 
+    /// Requires that [djikstra](./fn.djikstra.html) has run to fill the shortest paths.
+    /// 
+    /// Uses [Node::shortest_path()](./struct.Node.html#method.shortest_path) to print the shortest path.
+    /// 
+    /// Use [Node::shortest_path()](./struct.Node.html#method.shortest_path) instead if you would like to receive the shortest path as string.
+    pub fn print_shortest_path(&self, target_node_id: T) {
+        let node = self.node_by_id(target_node_id).unwrap();
+        println!("Shortest path to {}: {}", node.borrow().id, node.borrow().shortest_path());
     }
 
     /// Create a graph from a 2D vector containing i32.
@@ -339,7 +392,7 @@ pub fn djikstra<T: Display + Clone + Eq + Hash>(start_node: Rc<RefCell<Node<T>>>
     }
 }
 
-fn calc_min_distance<T: Display + Eq>(node: &Rc<RefCell<Node<T>>>, weight: i32, source: &Rc<RefCell<Node<T>>>) {
+fn calc_min_distance<T: Display + Eq + Clone>(node: &Rc<RefCell<Node<T>>>, weight: i32, source: &Rc<RefCell<Node<T>>>) {
     let source_distance = source.borrow().distance;
     if source_distance + weight < node.borrow().distance {
         node.borrow_mut().set_distance(source_distance + weight);
@@ -460,7 +513,33 @@ mod tests {
         vec.push(vec_inner_3);
         let graph = Graph::<String>::from_i32_vec(&vec);
         assert_eq!(8, djikstra(graph.node_by_id(String::from("[0|0]")).unwrap(), graph.node_by_id(String::from("[2|2]")).unwrap()).unwrap_or(-1));
+        graph.print_shortest_path(String::from("[2|2]"));
         assert_eq!(7, djikstra(graph.node_by_id(String::from("[0|1]")).unwrap(), graph.node_by_id(String::from("[2|2]")).unwrap()).unwrap_or(-1));
+    }
+
+    #[test]
+    fn node_shortest_path() {
+        // Prepare graph
+        let mut graph: Graph<char> = Graph::new();
+        let node_a_idx = graph.add_node(Node::new('a'));
+        let node_b_idx = graph.add_node(Node::new('b'));
+        let node_c_idx = graph.add_node(Node::new('c'));
+        let node_d_idx = graph.add_node(Node::new('d'));
+        let node_e_idx = graph.add_node(Node::new('e'));
+        graph.add_edge(3, node_a_idx, node_b_idx);
+        graph.add_edge(4, node_a_idx, node_c_idx);
+        graph.add_edge(3, node_b_idx, node_a_idx);
+        graph.add_edge(2, node_b_idx, node_d_idx);
+        graph.add_edge(9, node_c_idx, node_a_idx);
+        graph.add_edge(1, node_c_idx, node_d_idx);
+        graph.add_edge(3, node_d_idx, node_b_idx);
+        graph.add_edge(7, node_d_idx, node_c_idx);
+        graph.add_edge(8, node_d_idx, node_e_idx);
+        djikstra(graph.node_by_id('a').unwrap(), graph.node_by_id('e').unwrap()).unwrap_or(-1);
+
+        // Get shortest path
+        let string = graph.node_by_id('e').unwrap().borrow_mut().shortest_path();
+        assert_eq!("a -> b -> d -> e", string)
     }
 
     #[test]
