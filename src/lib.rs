@@ -1,4 +1,4 @@
-use std::{fmt::Display, rc::Rc, cell::RefCell};
+use std::{fmt::Display, rc::Rc, cell::RefCell, collections::HashMap};
 
 /// An edge between two nodes inside the graph
 #[derive(Clone)]
@@ -162,20 +162,22 @@ impl<'a, T: Display + Clone + Eq> Graph<T> {
     /// vec.push(vec_inner_3);
     /// 
     /// // Create graph from example vector
-    /// let graph = Graph::<String>::from_string_vec(&vec);
+    /// let graph = Graph::<String>::from_i32_vec(&vec);
     /// 
     /// // Run djikstra's algorithm
     /// assert_eq!(8, djikstra(graph.node_by_id(String::from("[0|0]")).unwrap(), graph.node_by_id(String::from("[2|2]")).unwrap()).unwrap_or(-1));
     /// ```
-    pub fn from_string_vec(vec: &Vec<Vec<i32>>) -> Graph<String> {
+    pub fn from_i32_vec(vec: &Vec<Vec<i32>>) -> Graph<String> {
         if cfg!(feature = "debug") {
             println!("Constructing graph from vector...");
             println!("Adding nodes...");
         }
         let mut graph = Graph::new();
+        let mut index_by_id: HashMap<(usize, usize), usize> = HashMap::new();
         for (i_y, y) in vec.iter().enumerate() {
             for (i_x, _x) in y.iter().enumerate() {
-                graph.add_node(Node::new(String::from(format!("[{}|{}]", i_x, i_y))));
+                let index = graph.add_node(Node::new(String::from(format!("[{}|{}]", i_x, i_y))));
+                index_by_id.insert((i_x, i_y), index);
             }
         }
         if cfg!(feature = "debug") {
@@ -185,7 +187,7 @@ impl<'a, T: Display + Clone + Eq> Graph<T> {
             let max_x_size = y.len();
             for (i_x, x) in y.iter().enumerate() {
                 for neighbor in neighbor_positions((i_x, i_y), max_x_size, vec.len()) {
-                    graph.add_edge(*x, graph.get_index_by_id(format!("[{}|{}]", neighbor.0, neighbor.1)).unwrap(), graph.get_index_by_id(String::from(format!("[{}|{}]", i_x, i_y))).unwrap());
+                    graph.add_edge(*x, *index_by_id.get(&(neighbor.0, neighbor.1)).unwrap(), *index_by_id.get(&(i_x, i_y)).unwrap());
                 }
             }
         }
@@ -447,8 +449,22 @@ mod tests {
         vec.push(vec_inner_1);
         vec.push(vec_inner_2);
         vec.push(vec_inner_3);
-        let graph = Graph::<String>::from_string_vec(&vec);
+        let graph = Graph::<String>::from_i32_vec(&vec);
         assert_eq!(8, djikstra(graph.node_by_id(String::from("[0|0]")).unwrap(), graph.node_by_id(String::from("[2|2]")).unwrap()).unwrap_or(-1));
         assert_eq!(7, djikstra(graph.node_by_id(String::from("[0|1]")).unwrap(), graph.node_by_id(String::from("[2|2]")).unwrap()).unwrap_or(-1));
+    }
+
+    #[test]
+    fn big_vec() {
+        let mut vec: Vec<Vec<i32>> = Vec::new();
+        for i in 1..=130 {
+            let mut inner_vec = Vec::new();
+            for j in 1..=130 {
+                inner_vec.push(i*j);
+            }
+            vec.push(inner_vec);
+        }
+        let graph = Graph::<String>::from_i32_vec(&vec);
+        assert_eq!(8, djikstra(graph.node_by_id(String::from("[0|0]")).unwrap(), graph.node_by_id(String::from("[20|20]")).unwrap()).unwrap_or(-1));
     }
 }
