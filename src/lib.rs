@@ -106,6 +106,13 @@ impl<T: Display + Eq + Clone> Node<T> {
         path_string.push_str(&format!("{}", self.id));
         path_string
     }
+
+    /// Returns the distance to this node.
+    /// 
+    /// For a node to receive its distance a path finding algorithm has to have run beforehand.
+    pub fn distance(&self) -> i32 {
+        self.distance
+    }
 }
 
 impl<T: Display + Eq> PartialEq for Node<T> {
