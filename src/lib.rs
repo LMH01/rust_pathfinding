@@ -81,13 +81,13 @@ impl<T: Display + Eq> Display for Node<T> {
 
 impl<T: Display + Eq> PartialOrd for Node<T> {
     fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
-        Some(self.distance.cmp(&other.distance))
+        Some(self.distance.cmp(&other.distance).reverse())
     }
 }
 
 impl<T: Display + Eq> Ord for Node<T> {
     fn cmp(&self, other: &Self) -> std::cmp::Ordering {
-        self.distance.cmp(&other.distance)
+        self.distance.cmp(&other.distance).reverse()
     }
 }
 
@@ -385,7 +385,7 @@ pub fn neighbor_positions(pos: (usize, usize), max_x_size: usize, max_y_size: us
 
 #[cfg(test)]
 mod tests {
-    use std::borrow::Borrow;
+    use std::{borrow::Borrow, cmp::Reverse};
 
     use super::*;
 
@@ -469,6 +469,21 @@ mod tests {
     }
 
     #[test]
+    fn binary_heap_test() {
+        let mut node_1 = Node::new(1);
+        node_1.set_distance(5);
+        let mut node_2 = Node::new(2);
+        node_2.set_distance(4);
+        let mut node_3 = Node::new(3);
+        node_3.set_distance(9);
+        let mut open_nodes: BinaryHeap<Rc<RefCell<Node<i32>>>> = BinaryHeap::new();
+        open_nodes.push(Rc::new(RefCell::new(node_1)));
+        open_nodes.push(Rc::new(RefCell::new(node_2)));
+        open_nodes.push(Rc::new(RefCell::new(node_3)));
+        assert_eq!(4, open_nodes.pop().unwrap().borrow_mut().distance);
+        assert_eq!(5, open_nodes.pop().unwrap().borrow_mut().distance);
+        assert_eq!(9, open_nodes.pop().unwrap().borrow_mut().distance);
+    }
 
     #[test]
     #[ignore]
