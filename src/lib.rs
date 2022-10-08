@@ -245,7 +245,7 @@ impl<T: Display> Display for Graph<T> {
 /// 
 /// `None` when no path between the two nodes exists.
 /// 
-/// # Example
+/// # Examples
 /// ```rust
 /// use lmh01_pathfinding::{Node, Graph, djikstra};
 /// 
@@ -287,6 +287,7 @@ impl<T: Display> Display for Graph<T> {
 /// assert_eq!(-1, result);
 /// 
 /// ```
+/// It is also possible to create a graph from a vector. For more information take a look [here](struct.Graph.html#method.from_i32_vec).
 /// ```should_panic
 /// use lmh01_pathfinding::{Node, Graph, djikstra};
 /// 
