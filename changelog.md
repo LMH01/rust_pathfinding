@@ -1,3 +1,8 @@
+# v4.0.0-dev
+
+- Reorganized internal structure
+- Updated function Graph::node_by_id to take a reference instead of the actual value
+
 # v3.0.0
 
 - Added option to parse graph from a list of instructions
