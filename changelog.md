@@ -3,6 +3,7 @@
 - Implemented Bellman-Ford algorithm
 - Reorganized internal structure
 - Updated function Graph::node_by_id to take a reference instead of the actual value
+- Changed dijkstra function signature to be consistent with bellman_ford function
 
 # v3.0.0
 

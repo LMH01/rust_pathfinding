@@ -83,7 +83,7 @@ impl<T: Display + Eq + Clone> Node<T> {
     /// graph.add_edge(1, node_c_idx, node_d_idx);
     /// graph.add_edge(3, node_d_idx, node_b_idx);
     /// graph.add_edge(7, node_d_idx, node_c_idx);
-    /// dijkstra(graph.node_by_id(&'a').unwrap(), graph.node_by_id(&'d').unwrap()).unwrap_or(-1);
+    /// dijkstra(&mut graph, &'a', &'d').unwrap_or(-1);
     /// 
     /// // Get shortest path
     /// let string = graph.node_by_id(&'d').unwrap().borrow_mut().shortest_path();
@@ -240,10 +240,10 @@ impl<'a, T: Display + Clone + Eq> Graph<T> {
     /// vec.push(vec_inner_3);
     /// 
     /// // Create graph from example vector
-    /// let graph = Graph::<String>::from_i32_vec(&vec);
+    /// let mut graph = Graph::<String>::from_i32_vec(&vec);
     /// 
     /// // Run dijkstra's algorithm
-    /// assert_eq!(8, dijkstra(graph.node_by_id(&String::from("[0|0]")).unwrap(), graph.node_by_id(&String::from("[2|2]")).unwrap()).unwrap_or(-1));
+    /// assert_eq!(8, dijkstra(&mut graph, &String::from("[0|0]"), &String::from("[2|2]")).unwrap_or(-1));
     /// ```
     pub fn from_i32_vec(vec: &Vec<Vec<i32>>) -> Graph<String> {
         if cfg!(feature = "debug") {
@@ -315,8 +315,8 @@ impl<'a, T: Display + Clone + Eq> Graph<T> {
     /// lines.push(String::from("edge: c 9 d"));
     /// lines.push(String::from("edge: c 2 b"));
     /// lines.push(String::from("double_edge: a 1 d"));
-    /// let graph = Graph::<String>::from_instructions(&lines);
-    /// assert_eq!(1, dijkstra(graph.node_by_id(&String::from("a")).unwrap(), graph.node_by_id(&String::from("d")).unwrap()).unwrap_or(-1));
+    /// let mut graph = Graph::<String>::from_instructions(&lines);
+    /// assert_eq!(1, dijkstra(&mut graph, &String::from("a"), &String::from("d")).unwrap_or(-1));
     /// ```
     pub fn from_instructions(instructions: &Vec<String>) -> Graph<String> {
         // Stores all node labels of nodes that should be added to the graph
@@ -450,10 +450,10 @@ mod tests {
         vec.push(vec_inner_1);
         vec.push(vec_inner_2);
         vec.push(vec_inner_3);
-        let graph = Graph::<String>::from_i32_vec(&vec);
-        assert_eq!(8, dijkstra(graph.node_by_id(&String::from("[0|0]")).unwrap(), graph.node_by_id(&String::from("[2|2]")).unwrap()).unwrap_or(-1));
+        let mut graph = Graph::<String>::from_i32_vec(&vec);
+        assert_eq!(8, dijkstra(&mut graph, &String::from("[0|0]"), &String::from("[2|2]")).unwrap_or(-1));
         graph.print_shortest_path(String::from("[2|2]"));
-        assert_eq!(7, dijkstra(graph.node_by_id(&String::from("[0|1]")).unwrap(), graph.node_by_id(&String::from("[2|2]")).unwrap()).unwrap_or(-1));
+        assert_eq!(7, dijkstra(&mut graph, &String::from("[0|1]"), &String::from("[2|2]")).unwrap_or(-1));
     }
 
     #[test]
@@ -468,8 +468,8 @@ mod tests {
         lines.push(String::from("edge: b 2 d"));
         lines.push(String::from("edge: c 9 d"));
         lines.push(String::from("edge: c 2 b"));
-        let graph = Graph::<String>::from_instructions(&lines);
-        assert_eq!(8, dijkstra(graph.node_by_id(&String::from("a")).unwrap(), graph.node_by_id(&String::from("d")).unwrap()).unwrap_or(-1));
+        let mut graph = Graph::<String>::from_instructions(&lines);
+        assert_eq!(8, dijkstra(&mut graph, &String::from("a"), &String::from("d")).unwrap_or(-1));
     }
 
     #[test]
@@ -488,8 +488,8 @@ mod tests {
         lines.push(String::from("edge: c 3 d"));
         lines.push(String::from("edge: d 7 c"));
         lines.push(String::from("edge: c 1 b"));
-        let graph = Graph::<String>::from_instructions(&lines);
-        assert_eq!(3, dijkstra(graph.node_by_id(&String::from("a")).unwrap(), graph.node_by_id(&String::from("d")).unwrap()).unwrap_or(-1));
+        let mut graph = Graph::<String>::from_instructions(&lines);
+        assert_eq!(3, dijkstra(&mut graph, &String::from("a"), &String::from("d")).unwrap_or(-1));
     }
 
     #[test]
@@ -509,9 +509,9 @@ mod tests {
         lines.push(String::from("edge: d 7 c"));
         lines.push(String::from("edge: c 1 b"));
         lines.push(String::from("double_edge: a 1 d"));
-        let graph = Graph::<String>::from_instructions(&lines);
+        let mut graph = Graph::<String>::from_instructions(&lines);
         println!("{graph}");
-        assert_eq!(1, dijkstra(graph.node_by_id(&String::from("a")).unwrap(), graph.node_by_id(&String::from("d")).unwrap()).unwrap_or(-1));
+        assert_eq!(1, dijkstra(&mut graph, &String::from("a"), &String::from("d")).unwrap_or(-1));
     }
 
     #[test]
@@ -532,7 +532,7 @@ mod tests {
         graph.add_edge(3, node_d_idx, node_b_idx);
         graph.add_edge(7, node_d_idx, node_c_idx);
         graph.add_edge(8, node_d_idx, node_e_idx);
-        dijkstra(graph.node_by_id(&'a').unwrap(), graph.node_by_id(&'e').unwrap()).unwrap_or(-1);
+        dijkstra(&mut graph, &'a', &'e').unwrap_or(-1);
 
         // Get shortest path
         let string = graph.node_by_id(&'e').unwrap().borrow_mut().shortest_path();
@@ -566,7 +566,7 @@ mod tests {
             }
             vec.push(inner_vec);
         }
-        let graph = Graph::<String>::from_i32_vec(&vec);
-        assert_eq!(5060, dijkstra(graph.node_by_id(&String::from("[0|0]")).unwrap(), graph.node_by_id(&String::from("[20|20]")).unwrap()).unwrap_or(-1));
+        let mut graph = Graph::<String>::from_i32_vec(&vec);
+        assert_eq!(5060, dijkstra(&mut graph, &String::from("[0|0]"), &String::from("[20|20]")).unwrap_or(-1));
     }
 }
