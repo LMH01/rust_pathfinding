@@ -287,6 +287,11 @@ impl<'a, T: Display + Clone + Eq> Graph<T> {
     /// ```
     /// This adds an edge from `LABEL1` to `LABEL2` with `WEIGHT`
     /// 
+    /// ```txt
+    /// double_edge: LABEL1 WEIGHT LABEL2
+    /// ```
+    /// This adds a double edge between `LABEL1` and `LABEL2` with `WEIGHT`
+    /// 
     /// # Example
     /// 
     /// ```rust
@@ -304,14 +309,15 @@ impl<'a, T: Display + Clone + Eq> Graph<T> {
     /// lines.push(String::from("edge: b 2 d"));
     /// lines.push(String::from("edge: c 9 d"));
     /// lines.push(String::from("edge: c 2 b"));
+    /// lines.push(String::from("double_edge: a 1 d"));
     /// let graph = Graph::<String>::from_instructions(&lines);
-    /// assert_eq!(8, djikstra(graph.node_by_id(String::from("a")).unwrap(), graph.node_by_id(String::from("d")).unwrap()).unwrap_or(-1));
+    /// assert_eq!(1, djikstra(graph.node_by_id(String::from("a")).unwrap(), graph.node_by_id(String::from("d")).unwrap()).unwrap_or(-1));
     /// ```
     pub fn from_instructions(instructions: &Vec<String>) -> Graph<String> {
         // Stores all node labels of nodes that should be added to the graph
         let mut node_labels = Vec::new();
-        // Stores all edges that should be added to the graph, (WEIGHT, LABEL1, LABEL2)
-        let mut edges = Vec::new();
+        // Stores all edges that should be added to the graph, (WEIGHT, LABEL1, LABEL2, double)
+        let mut edges: Vec<(i32, String, String, bool)> = Vec::new();
 
         // Parse lines
         for line in instructions {
@@ -321,7 +327,10 @@ impl<'a, T: Display + Clone + Eq> Graph<T> {
                     node_labels.push(String::from(split[1]));
                 },
                 "edge:" => {
-                    edges.push((split[2].parse::<i32>().expect("Unable to parse edge weight!"), String::from(split[1]), String::from(split[3])));
+                    edges.push((split[2].parse::<i32>().expect("Unable to parse edge weight!"), String::from(split[1]), String::from(split[3]), false));
+                },
+                "double_edge:" => {
+                    edges.push((split[2].parse::<i32>().expect("Unable to parse edge weight!"), String::from(split[1]), String::from(split[3]), true));
                 },
                 _ => (),
             }
@@ -338,7 +347,11 @@ impl<'a, T: Display + Clone + Eq> Graph<T> {
         }
         // Add edges to graph
         for edge in edges {
-            graph.add_edge(edge.0,*node_indexes.get(&edge.1).expect("Unable to find edge index!"), *node_indexes.get(&edge.2).expect("Unable to find edge index!"));
+            if edge.3 {
+                graph.add_double_edge(edge.0,*node_indexes.get(&edge.1).expect("Unable to find edge index!"), *node_indexes.get(&edge.2).expect("Unable to find edge index!"));
+            } else {
+                graph.add_edge(edge.0,*node_indexes.get(&edge.1).expect("Unable to find edge index!"), *node_indexes.get(&edge.2).expect("Unable to find edge index!"));
+            }
         }
 
         graph
@@ -633,6 +646,28 @@ mod tests {
         lines.push(String::from("edge: c 1 b"));
         let graph = Graph::<String>::from_instructions(&lines);
         assert_eq!(3, djikstra(graph.node_by_id(String::from("a")).unwrap(), graph.node_by_id(String::from("d")).unwrap()).unwrap_or(-1));
+    }
+
+    #[test]
+    fn graph_from_instructions_3() {
+        let mut lines = Vec::new();
+        lines.push(String::from("node: a"));
+        lines.push(String::from("node: b"));
+        lines.push(String::from("node: c"));
+        lines.push(String::from("node: d"));
+        lines.push(String::from("edge: a 3 b"));
+        lines.push(String::from("edge: b 5 a"));
+        lines.push(String::from("edge: a 1 c"));
+        lines.push(String::from("edge: c 9 a"));
+        lines.push(String::from("edge: b 1 d"));
+        lines.push(String::from("edge: d 3 b"));
+        lines.push(String::from("edge: c 3 d"));
+        lines.push(String::from("edge: d 7 c"));
+        lines.push(String::from("edge: c 1 b"));
+        lines.push(String::from("double_edge: a 1 d"));
+        let graph = Graph::<String>::from_instructions(&lines);
+        println!("{graph}");
+        assert_eq!(1, djikstra(graph.node_by_id(String::from("a")).unwrap(), graph.node_by_id(String::from("d")).unwrap()).unwrap_or(-1));
     }
 
     #[test]
