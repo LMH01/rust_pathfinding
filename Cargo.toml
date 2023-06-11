@@ -1,6 +1,6 @@
 [package]
 name = "lmh01_pathfinding"
-version = "4.0.0-dev"
+version = "4.0.0"
 edition = "2021"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
