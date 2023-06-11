@@ -7,3 +7,4 @@
 ## Bugfixes
 
 - Fixed dijkstra implementation to also compute the correct path when edges are already in the open list but with a larger distance
+- Shortest path is now also reset when nodes are reset, this could cause problems

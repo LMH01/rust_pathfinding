@@ -196,12 +196,13 @@ impl<'a, T: Display + Clone + Eq> Graph<T> {
     }
 
 
-    /// Resets the distance of each node in the graph back to `i32::MAX`.
+    /// Resets the distance of each node in the graph back to `i32::MAX` and resets the shortest path string.
     /// 
     /// Should be called after [djikstra](./fn.djikstra.html) has run, otherwise the next call might not result in the correct distance.
     pub fn reset_nodes(&mut self) {
         for node in self.nodes.iter_mut() {
             node.borrow_mut().set_distance(i32::MAX);
+            node.borrow_mut().shortest_path = Vec::new();
         }
     }
 
