@@ -311,5 +311,23 @@ mod tests {
         assert_eq!(-3, bellman_ford(&mut graph, &'d', &'b').unwrap_or(-1));
         assert_eq!(-2, bellman_ford(&mut graph, &'d', &'a').unwrap_or(-1));
     }
+
+    #[test]
+    fn bellman_ford_test_node_shortest_path() {
+        let mut graph: Graph<char> = Graph::new();
+        let node_a_idx = graph.add_node(Node::new('a'));
+        let node_b_idx = graph.add_node(Node::new('b'));
+        let node_c_idx = graph.add_node(Node::new('c'));
+        let node_d_idx = graph.add_node(Node::new('d'));
+        graph.add_double_edge(4, node_a_idx, node_b_idx);
+        graph.add_edge(2, node_a_idx, node_c_idx);
+        graph.add_edge(-1, node_c_idx, node_a_idx);
+        graph.add_edge(5, node_a_idx, node_d_idx);
+        graph.add_edge(-3, node_d_idx, node_b_idx);
+        graph.add_double_edge(2, node_b_idx, node_c_idx);
+        graph.add_edge(7, node_d_idx, node_c_idx);
+        bellman_ford(&mut graph, &'d', &'a').unwrap_or(-1);
+        assert_eq!("d -> b -> c -> a", graph.node_by_id(&'a').unwrap().borrow().shortest_path());
+    }
     
 }
