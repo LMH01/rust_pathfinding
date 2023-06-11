@@ -201,6 +201,16 @@ impl<'a, T: Display + Clone + Eq> Graph<T> {
         }
     }
 
+    /// Returns the size of this graph, determined by the amount of nodes stored
+    pub fn size(&self) -> usize {
+        self.nodes.len()
+    }
+
+    /// Returns a reference to the nodes stored in this graph
+    pub fn nodes(&self) -> &Vec<Rc<RefCell<Node<T>>>> {
+        &self.nodes
+    }
+
     /// Prints the shortest path to the target node.
     /// 
     /// Requires that [djikstra](./fn.djikstra.html) has run to fill the shortest paths.

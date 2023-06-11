@@ -1,5 +1,6 @@
 # v4.0.0-dev
 
+- Implemented Bellman-Ford algorithm
 - Reorganized internal structure
 - Updated function Graph::node_by_id to take a reference instead of the actual value
 
