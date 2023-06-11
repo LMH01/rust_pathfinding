@@ -369,10 +369,16 @@ pub fn djikstra<T: Display + Clone + Eq + Hash>(start_node: Rc<RefCell<Node<T>>>
         for edge in &node.borrow().edges {
             let target = &edge.target;
             let edge_weight = edge.weight;
-            if !closed_node_ids.contains(&target.borrow().id) && !open_node_ids.contains(&target.borrow().id){
+            if !closed_node_ids.contains(&target.borrow().id) {
+                let new_distance = node.borrow().distance + edge_weight;
                 calc_min_distance(target, edge_weight, &node);
-                open_nodes.push(target.clone());
-                open_node_ids.insert(target.borrow().clone().id);
+                if new_distance < target.borrow().distance {
+                    target.borrow_mut().set_distance(new_distance);
+                }
+                if !open_node_ids.contains(&target.borrow().id) {
+                    open_nodes.push(target.clone());
+                    open_node_ids.insert(target.borrow().clone().id);
+                }
             }
         }
         closed_node_ids.insert(node.borrow().clone().id);
