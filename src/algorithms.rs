@@ -5,7 +5,7 @@ use crate::core::{Node, Graph};
 /// Calculates the shortest distance between two nodes.
 /// This will utilize the algorithm by [djikstra](https://en.wikipedia.org/wiki/Dijkstra%27s_algorithm).
 ///
-/// This algorithm does not work properly on graphs with negative edge weights.
+/// This algorithm does not work properly on graphs with negative edge weights. Use [bellman_ford](fn.bellman_ford.html) instead if your graph has negative weights.
 ///  
 /// The distance field in each node should be set to `i32:MAX` before this function is called.
 /// When the nodes are organized using the [Graph](struct.Graph.html) struct the function [reset_nodes](struct.Graph.html#method.reset_nodes) may be used to reset the distance field.
@@ -112,7 +112,7 @@ fn calc_min_distance<T: Display + Eq + Clone>(node: &Rc<RefCell<Node<T>>>, weigh
 /// Calculates the shortest distance between two nodes.
 /// This will utilize the [Bellman-Ford algorithm](https://en.wikipedia.org/wiki/Bellman%E2%80%93Ford_algorithm).
 /// 
-/// This algorithm works on graphs with negative edge weights but is slower than Dijkstra's algorithm.
+/// This algorithm works on graphs with negative edge weights but is slower than [Dijkstra's algorithm](fn.dijkstra.html).
 /// 
 /// # Params
 /// `graph` - the graph on which the algorithm should be run
