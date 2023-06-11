@@ -266,6 +266,83 @@ impl<'a, T: Display + Clone + Eq> Graph<T> {
         graph
     }
 
+    /// Constructs a graph from a list of instructions. This is meant to be used by reading the instructions form a file.
+    /// 
+    /// The order in which the instructions are stored in the vector does not matter.
+    /// 
+    /// # Instructions
+    /// 
+    /// ## Nodes
+    /// 
+    /// ```txt
+    /// node: LABEL1
+    /// ```
+    /// This declares a new node labeled `LABEL1`
+    /// 
+    /// ## Edge
+    /// 
+    /// ```txt
+    /// edge: LABEL1 WEIGHT LABEL2
+    /// ```
+    /// This adds an edge from `LABEL1` to `LABEL2` with `WEIGHT`
+    /// 
+    /// # Example
+    /// 
+    /// ```rust
+    /// use lmh01_pathfinding::djikstra;
+    /// use lmh01_pathfinding::Graph;
+    /// 
+    /// // This lines vector should ideally constructed by parsing a file, below insertions are just for demonstration.
+    /// let mut lines = Vec::new();
+    /// lines.push("node: a");
+    /// lines.push("node: b");
+    /// lines.push("node: c");
+    /// lines.push("node: d");
+    /// lines.push("edge: a 7 b");
+    /// lines.push("edge: a 4 c");
+    /// lines.push("edge: b 2 d");
+    /// lines.push("edge: c 9 d");
+    /// lines.push("edge: c 2 b");
+    /// let graph = Graph::<String>::from_instructions(&lines);
+    /// assert_eq!(8, djikstra(graph.node_by_id(String::from("a")).unwrap(), graph.node_by_id(String::from("d")).unwrap()).unwrap_or(-1));
+    /// ```
+    pub fn from_instructions(instructions: &Vec<&str>) -> Graph<String> {
+        // Stores all node labels of nodes that should be added to the graph
+        let mut node_labels = Vec::new();
+        // Stores all edges that should be added to the graph, (WEIGHT, LABEL1, LABEL2)
+        let mut edges = Vec::new();
+
+        // Parse lines
+        for line in instructions {
+            let split: Vec<&str> = line.split(' ').collect();
+            match split[0].to_lowercase().as_str() {
+                "node:" => {
+                    node_labels.push(String::from(split[1]));
+                },
+                "edge:" => {
+                    edges.push((split[2].parse::<i32>().expect("Unable to parse edge weight!"), String::from(split[1]), String::from(split[3])));
+                },
+                _ => (),
+            }
+        }
+
+        let mut graph = Graph::new();
+
+        // Because node indexes are required to add edges to the graph, this map stores node labels mapped to the index
+        let mut node_indexes = HashMap::new();
+        // Add nodes to graph
+        for label in node_labels {
+            let idx = graph.add_node(Node::new(label.clone()));
+            node_indexes.insert(label, idx);
+        }
+        // Add edges to graph
+        for edge in edges {
+            graph.add_edge(edge.0,*node_indexes.get(&edge.1).expect("Unable to find edge index!"), *node_indexes.get(&edge.2).expect("Unable to find edge index!"));
+        }
+
+        graph
+    }
+
 }
 
 impl<T: Display> Display for Graph<T> {
@@ -515,6 +592,42 @@ mod tests {
         assert_eq!(8, djikstra(graph.node_by_id(String::from("[0|0]")).unwrap(), graph.node_by_id(String::from("[2|2]")).unwrap()).unwrap_or(-1));
         graph.print_shortest_path(String::from("[2|2]"));
         assert_eq!(7, djikstra(graph.node_by_id(String::from("[0|1]")).unwrap(), graph.node_by_id(String::from("[2|2]")).unwrap()).unwrap_or(-1));
+    }
+
+    #[test]
+    fn graph_from_instructions() {
+        let mut lines = Vec::new();
+        lines.push("node: a");
+        lines.push("node: b");
+        lines.push("node: c");
+        lines.push("node: d");
+        lines.push("edge: a 7 b");
+        lines.push("edge: a 4 c");
+        lines.push("edge: b 2 d");
+        lines.push("edge: c 9 d");
+        lines.push("edge: c 2 b");
+        let graph = Graph::<String>::from_instructions(&lines);
+        assert_eq!(8, djikstra(graph.node_by_id(String::from("a")).unwrap(), graph.node_by_id(String::from("d")).unwrap()).unwrap_or(-1));
+    }
+
+    #[test]
+    fn graph_from_instructions_2() {
+        let mut lines = Vec::new();
+        lines.push("node: a");
+        lines.push("node: b");
+        lines.push("node: c");
+        lines.push("node: d");
+        lines.push("edge: a 3 b");
+        lines.push("edge: b 5 a");
+        lines.push("edge: a 1 c");
+        lines.push("edge: c 9 a");
+        lines.push("edge: b 1 d");
+        lines.push("edge: d 3 b");
+        lines.push("edge: c 3 d");
+        lines.push("edge: d 7 c");
+        lines.push("edge: c 1 b");
+        let graph = Graph::<String>::from_instructions(&lines);
+        assert_eq!(3, djikstra(graph.node_by_id(String::from("a")).unwrap(), graph.node_by_id(String::from("d")).unwrap()).unwrap_or(-1));
     }
 
     #[test]
