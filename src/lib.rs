@@ -443,6 +443,7 @@ pub fn djikstra<T: Display + Clone + Eq + Hash>(start_node: Rc<RefCell<Node<T>>>
 
     while !open_nodes.is_empty() {
         let node = open_nodes.pop().unwrap();
+
         for edge in &node.borrow().edges {
             let target = &edge.target;
             let edge_weight = edge.weight;
@@ -459,6 +460,9 @@ pub fn djikstra<T: Display + Clone + Eq + Hash>(start_node: Rc<RefCell<Node<T>>>
             }
         }
         closed_node_ids.insert(node.borrow().clone().id);
+        if cfg!(feature = "steps") {
+            println!("Last node: {}, distance: {:2} | open: {:12}, closed: {:12}", node.borrow().id, node.borrow().distance, open_nodes.len(), closed_node_ids.len());
+        }
     }
 
     let target_distance = target_node.borrow().distance;
