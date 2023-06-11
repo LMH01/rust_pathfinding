@@ -294,19 +294,19 @@ impl<'a, T: Display + Clone + Eq> Graph<T> {
     /// 
     /// // This lines vector should ideally constructed by parsing a file, below insertions are just for demonstration.
     /// let mut lines = Vec::new();
-    /// lines.push("node: a");
-    /// lines.push("node: b");
-    /// lines.push("node: c");
-    /// lines.push("node: d");
-    /// lines.push("edge: a 7 b");
-    /// lines.push("edge: a 4 c");
-    /// lines.push("edge: b 2 d");
-    /// lines.push("edge: c 9 d");
-    /// lines.push("edge: c 2 b");
+    /// lines.push(String::from("node: a"));
+    /// lines.push(String::from("node: b"));
+    /// lines.push(String::from("node: c"));
+    /// lines.push(String::from("node: d"));
+    /// lines.push(String::from("edge: a 7 b"));
+    /// lines.push(String::from("edge: a 4 c"));
+    /// lines.push(String::from("edge: b 2 d"));
+    /// lines.push(String::from("edge: c 9 d"));
+    /// lines.push(String::from("edge: c 2 b"));
     /// let graph = Graph::<String>::from_instructions(&lines);
     /// assert_eq!(8, djikstra(graph.node_by_id(String::from("a")).unwrap(), graph.node_by_id(String::from("d")).unwrap()).unwrap_or(-1));
     /// ```
-    pub fn from_instructions(instructions: &Vec<&str>) -> Graph<String> {
+    pub fn from_instructions(instructions: &Vec<String>) -> Graph<String> {
         // Stores all node labels of nodes that should be added to the graph
         let mut node_labels = Vec::new();
         // Stores all edges that should be added to the graph, (WEIGHT, LABEL1, LABEL2)
@@ -601,15 +601,15 @@ mod tests {
     #[test]
     fn graph_from_instructions() {
         let mut lines = Vec::new();
-        lines.push("node: a");
-        lines.push("node: b");
-        lines.push("node: c");
-        lines.push("node: d");
-        lines.push("edge: a 7 b");
-        lines.push("edge: a 4 c");
-        lines.push("edge: b 2 d");
-        lines.push("edge: c 9 d");
-        lines.push("edge: c 2 b");
+        lines.push(String::from("node: a"));
+        lines.push(String::from("node: b"));
+        lines.push(String::from("node: c"));
+        lines.push(String::from("node: d"));
+        lines.push(String::from("edge: a 7 b"));
+        lines.push(String::from("edge: a 4 c"));
+        lines.push(String::from("edge: b 2 d"));
+        lines.push(String::from("edge: c 9 d"));
+        lines.push(String::from("edge: c 2 b"));
         let graph = Graph::<String>::from_instructions(&lines);
         assert_eq!(8, djikstra(graph.node_by_id(String::from("a")).unwrap(), graph.node_by_id(String::from("d")).unwrap()).unwrap_or(-1));
     }
@@ -617,19 +617,19 @@ mod tests {
     #[test]
     fn graph_from_instructions_2() {
         let mut lines = Vec::new();
-        lines.push("node: a");
-        lines.push("node: b");
-        lines.push("node: c");
-        lines.push("node: d");
-        lines.push("edge: a 3 b");
-        lines.push("edge: b 5 a");
-        lines.push("edge: a 1 c");
-        lines.push("edge: c 9 a");
-        lines.push("edge: b 1 d");
-        lines.push("edge: d 3 b");
-        lines.push("edge: c 3 d");
-        lines.push("edge: d 7 c");
-        lines.push("edge: c 1 b");
+        lines.push(String::from("node: a"));
+        lines.push(String::from("node: b"));
+        lines.push(String::from("node: c"));
+        lines.push(String::from("node: d"));
+        lines.push(String::from("edge: a 3 b"));
+        lines.push(String::from("edge: b 5 a"));
+        lines.push(String::from("edge: a 1 c"));
+        lines.push(String::from("edge: c 9 a"));
+        lines.push(String::from("edge: b 1 d"));
+        lines.push(String::from("edge: d 3 b"));
+        lines.push(String::from("edge: c 3 d"));
+        lines.push(String::from("edge: d 7 c"));
+        lines.push(String::from("edge: c 1 b"));
         let graph = Graph::<String>::from_instructions(&lines);
         assert_eq!(3, djikstra(graph.node_by_id(String::from("a")).unwrap(), graph.node_by_id(String::from("d")).unwrap()).unwrap_or(-1));
     }
