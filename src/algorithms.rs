@@ -48,14 +48,8 @@ use crate::core::{Node, Graph};
 /// let result = dijkstra(&mut graph, &'a', &'d').unwrap_or(-1);
 /// assert_eq!(5, result);
 /// 
-/// // Reset node distances before running the algorithm again
-/// graph.reset_nodes();
-/// 
-/// // Run algorithm again
 /// let result = dijkstra(&mut graph, &'b', &'c').unwrap_or(-1);
 /// assert_eq!(9, result);
-/// 
-/// // Reset nodes again
 /// 
 /// // Run algorithm again, returns -1 because no node exists that connects e to the rest of the graph.
 /// let result = dijkstra(&mut graph, &'a', &'e').unwrap_or(-1);
