@@ -366,19 +366,6 @@ pub fn djikstra<T: Display + Clone + Eq + Hash>(start_node: Rc<RefCell<Node<T>>>
 
     while !open_nodes.is_empty() {
         let node = open_nodes.pop().unwrap();
-        if cfg!(feature = "debug") {
-            let len = open_nodes.len();
-            let closed_len = closed_node_ids.len();
-            if closed_len % 100 == 0 && closed_len <= 10000 {
-                println!("Nodes open / closed: {:12}/{:12}", len, closed_len);
-            } else if closed_len % 1000 == 0 && closed_len <=50000 {
-                println!("Nodes open / closed: {:12}/{:12}", len, closed_len);
-            } else if closed_len % 10000 == 0 && closed_len <=500000 {
-                println!("Nodes open / closed: {:12}/{:12}", len, closed_len);
-            } else if closed_len % 100000 == 0 {
-                println!("Nodes open / closed: {:12}/{:12}", len, closed_len);
-            }
-        }
         for edge in &node.borrow().edges {
             let target = &edge.target;
             let edge_weight = edge.weight;
