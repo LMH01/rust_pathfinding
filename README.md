@@ -1,6 +1,9 @@
 # lmh01_pathfinding_rs
 My try at writing pathfinding algorithms in rust.
 
+This project is the successor to [simple_graph_algorithms](https://github.com/LMH01/simple_graph_algorithms).
+The new project has been created to clean up the project and make it fit for submission to [crates.io](https://crates.io), further development will be done there.
+
 ## Algorithms
 The following algorithms are currently available in this library:
 
