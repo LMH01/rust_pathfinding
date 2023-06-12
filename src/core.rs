@@ -362,6 +362,19 @@ impl<'a, T: Display + Clone + Eq> Graph<T> {
         graph
     }
 
+    #[cfg(feature = "mermaid")]
+    pub fn mermaid_string(&self) -> String {
+        let mut s = String::new();
+        s.push_str("flowchart LR\n");
+        for node in &self.nodes {
+            let id = &node.borrow().id;
+            for edge in &node.borrow().edges {
+                s.push_str(&format!("{}(({})) -->|{}|{}(({}))\n",id, id, edge.weight, edge.target.borrow().id, edge.target.borrow().id));
+            }
+        }
+        s
+    }
+
 }
 
 impl<T: Display> Display for Graph<T> {
@@ -540,6 +553,15 @@ mod tests {
     }
 
     #[test]
+    #[cfg(feature = "mermaid")]
+    fn mermaid_string_test() {
+        let mut graph = base_graph();
+        let mermaid = graph.mermaid_string();
+        println!("{mermaid}");
+        assert_eq!("flowchart LR\na((a)) -->|3|b((b))\na((a)) -->|4|c((c))\nb((b)) -->|3|a((a))\nb((b)) -->|2|d((d))\nc((c)) -->|9|a((a))\nc((c)) -->|1|d((d))\nd((d)) -->|3|b((b))\nd((d)) -->|7|c((c))\nd((d)) -->|8|e((e))\n", mermaid);
+    }
+
+    #[test]
     fn binary_heap_test() {
         let mut node_1 = Node::new(1);
         node_1.distance = 5;
@@ -568,5 +590,26 @@ mod tests {
         }
         let mut graph = Graph::<String>::from_i32_vec(&vec);
         assert_eq!(5060, dijkstra(&mut graph, &String::from("[0|0]"), &String::from("[20|20]")).unwrap_or(-1));
+    }
+
+    /// Creates a base graph with some nodes and some edges on which further testes can be run
+    fn base_graph() -> Graph<char> {
+        // Prepare graph
+        let mut graph: Graph<char> = Graph::new();
+        let node_a_idx = graph.add_node(Node::new('a'));
+        let node_b_idx = graph.add_node(Node::new('b'));
+        let node_c_idx = graph.add_node(Node::new('c'));
+        let node_d_idx = graph.add_node(Node::new('d'));
+        let node_e_idx = graph.add_node(Node::new('e'));
+        graph.add_edge(3, node_a_idx, node_b_idx);
+        graph.add_edge(4, node_a_idx, node_c_idx);
+        graph.add_edge(3, node_b_idx, node_a_idx);
+        graph.add_edge(2, node_b_idx, node_d_idx);
+        graph.add_edge(9, node_c_idx, node_a_idx);
+        graph.add_edge(1, node_c_idx, node_d_idx);
+        graph.add_edge(3, node_d_idx, node_b_idx);
+        graph.add_edge(7, node_d_idx, node_c_idx);
+        graph.add_edge(8, node_d_idx, node_e_idx);
+        graph
     }
 }
