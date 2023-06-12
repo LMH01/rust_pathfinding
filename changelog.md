@@ -1,6 +1,3 @@
-# v5.0.0 / v1.0.0 when renamed to either simple_pathfinding or simple_graph_algorithms
-- Added mermaid feature with enables a function that can transform a graph into mermaid string
-
 # v4.0.0
 
 - Implemented Bellman-Ford algorithm
