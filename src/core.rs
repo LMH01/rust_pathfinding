@@ -369,7 +369,7 @@ impl<'a, T: Display + Clone + Eq> Graph<T> {
         for node in &self.nodes {
             let id = &node.borrow().id;
             for edge in &node.borrow().edges {
-                s.push_str(&format!("{}(({})) -->|{}|{}(({}))\n",id, id, edge.weight, edge.target.borrow().id, edge.target.borrow().id));
+                s.push_str(&format!("\"{}\"((\"{}\")) -->|{}|\"{}\"((\"{}\"))\n",id, id, edge.weight, edge.target.borrow().id, edge.target.borrow().id));
             }
         }
         s
@@ -558,8 +558,7 @@ mod tests {
         let mut graph = base_graph();
         let mermaid = graph.mermaid_string();
         println!("{mermaid}");
-        assert_eq!("flowchart LR\na((a)) -->|3|b((b))\na((a)) -->|4|c((c))\nb((b)) -->|3|a((a))\nb((b)) -->|2|d((d))\nc((c)) -->|9|a((a))\nc((c)) -->|1|d((d))\nd((d)) -->|3|b((b))\nd((d)) -->|7|c((c))\nd((d)) -->|8|e((e))\n", mermaid);
-    }
+        assert_eq!("flowchart LR\n\"a\"((\"a\")) -->|3|\"b\"((\"b\"))\n\"a\"((\"a\")) -->|4|\"c\"((\"c\"))\n\"b\"((\"b\")) -->|3|\"a\"((\"a\"))\n\"b\"((\"b\")) -->|2|\"d\"((\"d\"))\n\"c\"((\"c\")) -->|9|\"a\"((\"a\"))\n\"c\"((\"c\")) -->|1|\"d\"((\"d\"))\n\"d\"((\"d\")) -->|3|\"b\"((\"b\"))\n\"d\"((\"d\")) -->|7|\"c\"((\"c\"))\n\"d\"((\"d\")) -->|8|\"e\"((\"e\"))\n", mermaid);}
 
     #[test]
     fn binary_heap_test() {
